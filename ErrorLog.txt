@@ -1,0 +1,29 @@
+[2/20/25, 11:26 AM]|JDBCBroker|JDBCBroker|Error|NOTAG|null<Could not load driver class[org.mariadb.jdbc.Driver]>
+[3/25/25, 12:29 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating InsertBookView: Root cannot be null>
+[3/25/25, 12:29 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating InsertBookView: Root cannot be null>
+[3/25/25, 12:29 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating InsertBookView: Root cannot be null>
+[3/25/25, 12:29 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating InsertBookView: Root cannot be null>
+[3/25/25, 12:29 PM]|Librarian|createNewPatron|Error|NOTAG|null<Error in creating InsertPatronView: Root cannot be null>
+[3/25/25, 12:30 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating InsertBookView: Root cannot be null>
+[3/25/25, 12:31 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating InsertBookView: Root cannot be null>
+[3/26/25, 5:53 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 5:53 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 5:54 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 5:56 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 5:56 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 5:58 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 5:58 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 5:59 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 6:00 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 6:03 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 6:04 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 6:04 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/26/25, 6:04 PM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/27/25, 11:01 AM]|Librarian|createNewBook|Error|NOTAG|null<Error in creating BookView: Root cannot be null>
+[3/27/25, 11:07 AM]|Patron|insertAutoIncrementalPersistentState|Error|NOTAG|null<SQL Exception: 1406: (conn=22067) Data too long for column 'stateCode' at row 1>
+[3/27/25, 11:07 AM]|Patron|insertAutoIncrementalPersistentState|Error|NOTAG|null<SQL Exception: 1406: (conn=22067) Data too long for column 'stateCode' at row 1>
+[3/27/25, 11:08 AM]|Librarian|createNewPatron|Error|NOTAG|null<Error in creating PatronView: Root cannot be null>
+[3/27/25, 11:49 AM]|Patron|insertAutoIncrementalPersistentState|Error|NOTAG|null<SQL Exception: 1406: (conn=22234) Data too long for column 'stateCode' at row 1>
+[3/27/25, 11:50 AM]|Patron|insertAutoIncrementalPersistentState|Error|NOTAG|null<SQL Exception: 1406: (conn=22234) Data too long for column 'stateCode' at row 1>
+[3/27/25, 11:50 AM]|Patron|insertAutoIncrementalPersistentState|Error|NOTAG|null<SQL Exception: 1406: (conn=22234) Data too long for column 'stateCode' at row 1>
+[3/27/25, 11:50 AM]|Patron|insertAutoIncrementalPersistentState|Error|NOTAG|null<SQL Exception: 1406: (conn=22234) Data too long for column 'stateCode' at row 1>
