@@ -54,6 +54,7 @@ public class InsertBookView extends View {
 
         // Register this view as a subscriber to the model
         myModel.subscribe("BookUpdateStatusMessage", this);
+        myModel.subscribe("InsertSuccessful", this);
     }
 
     // Create the title container
@@ -71,7 +72,7 @@ public class InsertBookView extends View {
         return container;
     }
 
-    // Create the main form content - using approach from BookView
+    // Create the main form content
     private VBox createFormContents() {
         VBox vbox = new VBox(10);
 
@@ -105,7 +106,7 @@ public class InsertBookView extends View {
         pubYearField.setMinWidth(200);
         grid.add(pubYearField, 1, 2);
 
-        // Adding a status ComboBox like in BookView
+        // Status ComboBox
         Label statusLabel = new Label("Status:");
         grid.add(statusLabel, 0, 3);
 
@@ -144,13 +145,13 @@ public class InsertBookView extends View {
         return vbox;
     }
 
-    // Create the status log field - using implementation from BookView
+    // Create the status log field
     private MessageView createStatusLog(String initialMessage) {
         statusLog = new MessageView("");
         return statusLog;
     }
 
-    // Process book submission - updated to handle status parameter like in BookView
+    // Process book submission
     private void processBookSubmit(String status) {
         clearErrorMessage();
 
@@ -175,15 +176,13 @@ public class InsertBookView extends View {
             props.setProperty("bookTitle", bookTitle);
             props.setProperty("author", author);
             props.setProperty("pubYear", pubYear);
-            props.setProperty("status", status);  // Use the passed status value
+            props.setProperty("status", status);
 
             // Send the data to the model instead of creating the book here
             myModel.stateChangeRequest("ProcessNewBook", props);
 
-            // Clear the fields for next entry
-            bookTitleField.clear();
-            authorField.clear();
-            pubYearField.clear();
+            // Fields will be cleared if insertion is successful
+            // This happens after the "Done" button is clicked in the notification
 
         } catch (NumberFormatException e) {
             displayErrorMessage("Publication Year must be a valid number");
@@ -198,11 +197,24 @@ public class InsertBookView extends View {
         myModel.stateChangeRequest("CancelAction", null);
     }
 
+    // Clear form fields
+    private void clearFields() {
+        bookTitleField.clear();
+        authorField.clear();
+        pubYearField.clear();
+        statusComboBox.setValue("Active");
+    }
+
     // Required by interface
     public void updateState(String key, Object value) {
         // Display any status updates from the model
         if (key.equals("BookUpdateStatusMessage")) {
             displayMessage((String)value);
+        }
+        else if (key.equals("InsertSuccessful")) {
+            // Book was successfully inserted
+            // Clear the fields for the next entry
+            clearFields();
         }
     }
 

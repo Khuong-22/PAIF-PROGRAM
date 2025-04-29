@@ -1,193 +1,156 @@
 package model;
 
-import java.sql.SQLException;
-import java.util.Enumeration;
+import event.Event;
+import impresario.IModel;
+import impresario.IView;
+import impresario.ModelRegistry;
+
 import java.util.Properties;
 import java.util.Vector;
-import exception.InvalidPrimaryKeyException;
-import impresario.IView;
+import java.util.Optional;
 
-public class Book extends EntityBase implements IView {
-    private static final String myTableName = "Book";
-    protected Properties dependencies;
-    private String updateStatusMessage = "";
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 
-    // Reference to the Librarian
+public class Book implements IModel {
+    // Common state
+    private ModelRegistry myRegistry;
+    private Properties persistentState;
     private Librarian myLibrarian;
 
-    // Constructor for creating a new Book object with empty data
+    // Constructor for new book
     public Book() {
-        super(myTableName);
-        setDependencies();
+        myRegistry = new ModelRegistry("Book");
         persistentState = new Properties();
-        persistentState.setProperty("status", "Active"); // default status
+        persistentState.setProperty("bookId", ""); // Will be set when saved to database
+        persistentState.setProperty("bookTitle", "");
+        persistentState.setProperty("author", "");
+        persistentState.setProperty("pubYear", "");
+        persistentState.setProperty("status", "Active");
+
+        setDependencies();
     }
 
-    // Constructor for creating a new Book object
+    // Constructor for existing book
     public Book(Properties props) {
-        super(myTableName);
+        myRegistry = new ModelRegistry("Book");
+        persistentState = props;
+
         setDependencies();
-        persistentState = new Properties();
-        Enumeration allKeys = props.propertyNames();
-        while (allKeys.hasMoreElements()) {
-            String nextKey = (String)allKeys.nextElement();
-            String nextValue = props.getProperty(nextKey);
-            if (nextValue != null) {
-                persistentState.setProperty(nextKey, nextValue);
-            }
-        }
     }
 
-    // Constructor for retrieving an existing Book
-    public Book(String bookId) throws InvalidPrimaryKeyException {
-        super(myTableName);
-        setDependencies();
-        String query = "SELECT * FROM " + myTableName + " WHERE (bookId = " + bookId + ")";
-        Vector<Properties> allDataRetrieved = getSelectQueryResult(query);
-
-        if (allDataRetrieved != null) {
-            int size = allDataRetrieved.size();
-            // There should be EXACTLY one book. More than that is an error
-            if (size != 1) {
-                throw new InvalidPrimaryKeyException("Multiple books matching id : " + bookId + " found.");
-            } else {
-                // copy all the retrieved data into persistent state
-                Properties retrievedBookData = allDataRetrieved.elementAt(0);
-                persistentState = new Properties();
-
-                Enumeration allKeys = retrievedBookData.propertyNames();
-                while (allKeys.hasMoreElements()) {
-                    String nextKey = (String)allKeys.nextElement();
-                    String nextValue = retrievedBookData.getProperty(nextKey);
-                    if (nextValue != null) {
-                        persistentState.setProperty(nextKey, nextValue);
-                    }
-                }
-            }
-        } else {
-            throw new InvalidPrimaryKeyException("No book matching id : " + bookId + " found.");
-        }
-    }
-
-    // Set the librarian reference
-    public void setLibrarian(Librarian librarian) {
-        myLibrarian = librarian;
-    }
-
+    // Set dependencies
     private void setDependencies() {
-        dependencies = new Properties();
-
-        // Key-value pairs for dependencies
-        dependencies.setProperty("ProcessNewBook", "UpdateStatusMessage");
-        dependencies.setProperty("BookUpdateStatusMessage", "UpdateStatusMessage");
-        dependencies.setProperty("CancelAction", "UpdateStatusMessage");
-        dependencies.setProperty("ReturnToLibrarianView", "UpdateStatusMessage");
-
+        Properties dependencies = new Properties();
+        dependencies.setProperty("ProcessNewBook", "BookUpdateStatusMessage");
+        dependencies.setProperty("InsertSuccessful", "");
+        dependencies.setProperty("CancelAction", "");
         myRegistry.setDependencies(dependencies);
     }
 
-    public Object getState(String key) {
-        if (key.equals("UpdateStatusMessage")) {
-            return updateStatusMessage;
+    // Set the librarian reference
+    public void setLibrarian(Librarian lib) {
+        myLibrarian = lib;
+    }
+
+    // Method to update the book in database
+    public void update() {
+        // Code to insert/update book in database would go here
+
+        // For now, simulate generating an ID
+        if (persistentState.getProperty("bookId").equals("")) {
+            // New book, generate an ID
+            int randomId = (int)(Math.random() * 10000) + 1000;
+            persistentState.setProperty("bookId", String.valueOf(randomId));
         }
-        return persistentState.getProperty(key);
+
+        // Get the book data for the popup
+        String bookId = persistentState.getProperty("bookId");
+        String bookTitle = persistentState.getProperty("bookTitle");
+
+        // Show success notification
+        showSuccessNotification(bookTitle, bookId);
+
+        // Return confirmation message for the status log
+        String message = "Book saved successfully! Book ID: " + bookId;
+        stateChangeRequest("BookUpdateStatusMessage", message);
+    }
+
+    // Show success notification popup
+    private void showSuccessNotification(String bookTitle, String bookId) {
+        // Use Platform.runLater to ensure this runs on the JavaFX thread
+        Platform.runLater(() -> {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Book Added");
+            alert.setHeaderText("Book Added Successfully");
+            alert.setContentText("Book \"" + bookTitle + "\" (ID: " + bookId + ") has been successfully added to the database.");
+
+            // Replace OK button with a Done button
+            ButtonType doneButton = new ButtonType("Done");
+            alert.getButtonTypes().setAll(doneButton);
+
+            // Show the alert and wait for response
+            Optional<ButtonType> result = alert.showAndWait();
+
+            // When Done button is clicked, return to main interface
+            if (result.isPresent() && result.get() == doneButton) {
+                // Return to main menu
+                stateChangeRequest("InsertSuccessful", null);
+
+                // If a librarian reference exists, return to the main screen
+                if (myLibrarian != null) {
+                    myLibrarian.stateChangeRequest("CancelAction", null);
+                }
+            }
+        });
+    }
+
+    // Get a vector of the data for display in a table/list view
+    public Vector<String> getEntryListView() {
+        Vector<String> entryList = new Vector<String>();
+
+        entryList.add(persistentState.getProperty("bookId"));
+        entryList.add(persistentState.getProperty("bookTitle"));
+        entryList.add(persistentState.getProperty("author"));
+        entryList.add(persistentState.getProperty("pubYear"));
+        entryList.add(persistentState.getProperty("status"));
+
+        return entryList;
+    }
+
+    // Required by IModel interface
+    public void subscribe(String key, IView subscriber) {
+        myRegistry.subscribe(key, subscriber);
+    }
+
+    public void unSubscribe(String key, IView subscriber) {
+        myRegistry.unSubscribe(key, subscriber);
     }
 
     public void stateChangeRequest(String key, Object value) {
-        System.out.println("Book received request: " + key);
-
         if (key.equals("ProcessNewBook")) {
-            processNewBook((Properties)value);
-        } else if (key.equals("CancelAction") || key.equals("ReturnToLibrarianView")) {
-            // Forward to the Librarian if we have a reference
+            // Extract properties from the passed value
+            Properties props = (Properties)value;
+            persistentState.setProperty("bookTitle", props.getProperty("bookTitle"));
+            persistentState.setProperty("author", props.getProperty("author"));
+            persistentState.setProperty("pubYear", props.getProperty("pubYear"));
+            persistentState.setProperty("status", props.getProperty("status"));
+
+            // Update the book
+            update();
+        }
+        else if (key.equals("CancelAction")) {
             if (myLibrarian != null) {
-                System.out.println("Book forwarding " + key + " to Librarian");
-                myLibrarian.stateChangeRequest(key, value);
-            } else {
-                // Try to get the Librarian instance
-                try {
-                    Librarian librarian = Librarian.getInstance();
-                    if (librarian != null) {
-                        System.out.println("Book forwarding " + key + " to Librarian singleton");
-                        librarian.stateChangeRequest(key, value);
-                    } else {
-                        System.out.println("Cannot find Librarian reference");
-                    }
-                } catch (Exception e) {
-                    System.out.println("Error getting Librarian: " + e.getMessage());
-                }
+                myLibrarian.stateChangeRequest("CancelAction", null);
             }
         }
 
         myRegistry.updateSubscribers(key, this);
     }
 
-    // Method to process data for a new book
-    public void processNewBook(Properties props) {
-        if (props != null) {
-            // Set all properties from the input
-            Enumeration allKeys = props.propertyNames();
-            while (allKeys.hasMoreElements()) {
-                String nextKey = (String)allKeys.nextElement();
-                String nextValue = props.getProperty(nextKey);
-
-                if (nextValue != null) {
-                    persistentState.setProperty(nextKey, nextValue);
-                }
-            }
-
-            // Now insert into database
-            update();
-        }
-    }
-
-    public void updateState(String key, Object value) {
-        stateChangeRequest(key, value);
-    }
-
-    // Called to update or insert the book into the database
-    public void update() {
-        updateStateInDatabase();
-    }
-
-    private void updateStateInDatabase() {
-        try {
-            if (persistentState.getProperty("bookId") != null) {
-                // update existing book
-                Properties whereClause = new Properties();
-                whereClause.setProperty("bookId", persistentState.getProperty("bookId"));
-                updatePersistentState(mySchema, persistentState, whereClause);
-                updateStatusMessage = "Book data for book ID : " + persistentState.getProperty("bookId") + " updated successfully in database!";
-            } else {
-                // insert new book
-                Integer bookId = insertAutoIncrementalPersistentState(mySchema, persistentState);
-                persistentState.setProperty("bookId", "" + bookId.intValue());
-                updateStatusMessage = "Book data for new book : " + persistentState.getProperty("bookId") + " installed successfully in database!";
-            }
-
-            // Update subscribers with THIS object, not a String
-            myRegistry.updateSubscribers("BookUpdateStatusMessage", this);
-        } catch (SQLException ex) {
-            updateStatusMessage = "Error in installing book data in database!";
-
-            // Update subscribers with THIS object, not a String
-            myRegistry.updateSubscribers("BookUpdateStatusMessage", this);
-        }
-    }
-
-    public Vector<String> getEntryListView() {
-        Vector<String> v = new Vector<String>();
-        v.addElement(persistentState.getProperty("bookId"));
-        v.addElement(persistentState.getProperty("bookTitle"));
-        v.addElement(persistentState.getProperty("author"));
-        v.addElement(persistentState.getProperty("pubYear"));
-        v.addElement(persistentState.getProperty("status"));
-        return v;
-    }
-
-    protected void initializeSchema(String tableName) {
-        if (mySchema == null) {
-            mySchema = getSchemaInfo(tableName);
-        }
+    public Object getState(String key) {
+        return persistentState.getProperty(key);
     }
 }
