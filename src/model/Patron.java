@@ -4,11 +4,17 @@ import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.Optional;
 
 import exception.InvalidPrimaryKeyException;
 import database.*;
 import impresario.IView;
 import impresario.ModelRegistry;
+
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 
 public class Patron extends EntityBase implements IView {
     private static final String myTableName = "Patron";
@@ -85,6 +91,7 @@ public class Patron extends EntityBase implements IView {
         dependencies.setProperty("PatronUpdateStatusMessage", "UpdateStatusMessage");
         dependencies.setProperty("CancelAction", "UpdateStatusMessage");
         dependencies.setProperty("ReturnToLibrarianView", "UpdateStatusMessage");
+        dependencies.setProperty("InsertSuccessful", "UpdateStatusMessage");
 
         myRegistry.setDependencies(dependencies);
     }
@@ -155,27 +162,75 @@ public class Patron extends EntityBase implements IView {
 
     private void updateStateInDatabase() {
         try {
-            if (persistentState.getProperty("patronId") != null) {
+            if (persistentState.getProperty("patronId") != null && !persistentState.getProperty("patronId").isEmpty()) {
                 // update existing patron
                 Properties whereClause = new Properties();
                 whereClause.setProperty("patronId", persistentState.getProperty("patronId"));
                 updatePersistentState(mySchema, persistentState, whereClause);
                 updateStatusMessage = "Patron data for patron ID : " + persistentState.getProperty("patronId") + " updated successfully in database!";
+
+                // Show update success popup
+                showSuccessNotification(persistentState.getProperty("name"), persistentState.getProperty("patronId"), false);
+
             } else {
                 // insert new patron
                 Integer patronId = insertAutoIncrementalPersistentState(mySchema, persistentState);
                 persistentState.setProperty("patronId", "" + patronId.intValue());
                 updateStatusMessage = "Patron data for new patron : " + persistentState.getProperty("patronId") + " installed successfully in database!";
+
+                // Show insert success popup
+                showSuccessNotification(persistentState.getProperty("name"), persistentState.getProperty("patronId"), true);
             }
 
             // Update subscribers with THIS object, not a String
             myRegistry.updateSubscribers("PatronUpdateStatusMessage", this);
+
         } catch (SQLException ex) {
-            updateStatusMessage = "Error in installing patron data in database!";
+            updateStatusMessage = "Error in installing patron data in database! " + ex.getMessage();
+            System.out.println("SQL Exception: " + ex.getMessage());
 
             // Update subscribers with THIS object, not a String
             myRegistry.updateSubscribers("PatronUpdateStatusMessage", this);
         }
+    }
+
+    // Show success notification popup
+    private void showSuccessNotification(String patronName, String patronId, boolean isNew) {
+        // Use Platform.runLater to ensure this runs on the JavaFX thread
+        Platform.runLater(() -> {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle(isNew ? "Patron Added" : "Patron Updated");
+            alert.setHeaderText(isNew ? "Patron Added Successfully" : "Patron Updated Successfully");
+            alert.setContentText("Patron " + patronName + " (ID: " + patronId + ") has been successfully " +
+                    (isNew ? "added to" : "updated in") + " the database.");
+
+            // Replace OK button with a Done button
+            ButtonType doneButton = new ButtonType("Done");
+            alert.getButtonTypes().setAll(doneButton);
+
+            // Show the alert and wait for response
+            Optional<ButtonType> result = alert.showAndWait();
+
+            // When Done button is clicked, return to main interface
+            if (result.isPresent() && result.get() == doneButton) {
+                // Notify subscribers that insertion/update was successful
+                myRegistry.updateSubscribers("InsertSuccessful", this);
+
+                // Return to main menu/librarian view
+                if (myLibrarian != null) {
+                    myLibrarian.stateChangeRequest("CancelAction", null);
+                } else {
+                    try {
+                        Librarian librarian = Librarian.getInstance();
+                        if (librarian != null) {
+                            librarian.stateChangeRequest("CancelAction", null);
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Error getting Librarian: " + e.getMessage());
+                    }
+                }
+            }
+        });
     }
 
     public Vector<String> getEntryListView() {
